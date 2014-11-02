@@ -1,174 +1,228 @@
 __author__ = 'deschancesdjomo'
 
 import ply.yacc as yacc
-import lexer # Import lexer information
+from lexer import Lexer # Import lexer information
+import ast
 
-tokens = lexer.tokens # Need token list
+class Parser:
 
-# dictionary of names
-names = { }
+    def __init__(self):
+        self.lex = Lexer()
+        self.lex.build()
+        self.tokens = self.lex.tokens
+        self.parser = yacc.yacc(module=self, start = 'Model')
 
-def p_empty(p):
-    'empty :'
-    pass
+    def parse(self, text, filename=''):
+        """ Parses TSML code and returns an AST.
 
-def p_IDList(t):
-    '''
-        IDList : COMMA ID
+            text:
+                A string containing the TSML source code
+
+            filename:
+                Name of the file being parsed (for meaningful
+                error messages)
+        """
+        self.lex.filename = filename
+        self.lex.reset_lineno()
+        return self.parser.parse(
+                input=text,
+                lexer=self.lex)
+
+
+    def p_empty(self, p):
+        'empty :'
+        p[0] = None
+
+    def p_IDList(self, p):
+        '''
+            IDList : ID
+            | IDList COMMA ID
+        '''
+        if len(p) == 2: # single parameter
+            p[0] = ast.ParamList([p[1]])
+        else:
+            p[1].params.append(p[3])
+            p[0] = p[1]
+
+    def p_PointSeparatedID(self, p):
+        '''
+            PointSeparatedID : ID
+            | PointSeparatedID POINT ID
+        '''
+        if len(p) == 2: # single parameter
+            p[0] = ast.ParamList([p[1]])
+        else:
+            p[1].params.append(p[3])
+            p[0] = p[1]
+
+
+    def p_EventPath(self, p):
+        '''
+        EventPath : ID POINT PointSeparatedID
+        '''
+        p[0] = ast.EventPath(p[1], p[3])
+
+    def p_EventPathList(self,p):
+        '''
+            EventPathList : EventPath
+            | EventPathList AND EventPath
+        '''
+        if len(p) == 2: # single synchronization
+            p[0] = ast.ParamList([p[1]])
+        else:
+            p[1].params.append(p[3])
+            p[0] = p[1]
+
+
+    def p_Synchronization(self,p):
+        '''
+        Synchronization : ID COLON EventPathList
+        '''
+        p[0] = ast.Synchronization(p[1], p[3])
+
+    def p_SynchronizationList(self,p):
+        '''
+            SynchronizationList : Synchronization
+            | SynchronizationList Synchronization
+        '''
+        if len(p) == 2: # single synchronization
+            p[0] = ast.ParamList([p[1]])
+        else:
+            p[1].params.append(p[2])
+            p[0] = p[1]
+
+    def p_SynchronizationClause(self, p):
+        '''
+        SynchronizationClause : SYNCHRONIZATION SynchronizationList
+        '''
+        p[0] = ast.ObjectDecl(p[1],p[2])
+
+
+    def p_ClassInstance(self, p):
+        '''
+        ClassInstance : ID  IDList
+        '''
+        p[0] =  ast.ClassInstance(p[1], p[2])
+
+
+    def p_ComposedBlockClause(self, t):
+        '''
+        ComposedBlockClause : ClassInstance
+        | Block
+        '''
+
+    def p_Transition(self, p):
+        '''
+        Transition : ID COLON ID ARROW ID
+        '''
+        p[0] = ast.Transition(p[1], p[3], p[5])
+
+    def p_TransitionList(self, p):
+        '''
+            TransitionList : Transition
+            | TransitionList Transition
+        '''
+        if len(p) == 2: # single transition
+            p[0] = ast.ParamList([p[1]])
+        else:
+            p[1].params.append(p[2])
+            p[0] = p[1]
+
+    def p_TransitionClause(self, p):
+        '''
+        TransitionClause : TRANSITION TransitionList
+        '''
+        p[0] = ast.ObjectDecl(p[1],p[2])
+
+
+    def p_EventClause(self, p):
+        '''
+        EventClause : EVENT IDList
+        '''
+        p[0] = ast.ObjectDecl(p[1],p[2])
+
+    def p_StateClause(self, p):
+        '''
+        StateClause : STATE  IDList
+        '''
+        p[0] = ast.ObjectDecl(p[1],p[2])
+
+    def p_InternalBlockBody(self, p):
+        '''
+        InternalBlockBody : ComposedBlockClause EventClause SynchronizationClause
+        '''
+        p[0] = ast.InternalBlockBody(p[1], p[2], p[3], None)
+
+    def p_BasicBlockBody(self, p):
+        '''
+        BasicBlockBody : StateClause EventClause TransitionClause
+        '''
+        p[0] = ast.BasicBlockBody(p[1], p[2], p[3], None)
+
+
+    def p_BlockBody(self, p):
+        '''
+        BlockBody : BasicBlockBody
+            | InternalBlockBody
+        '''
+        p[0] = ast.BlockBody(p[1])
+
+    def p_Class(self, p):
+        '''
+        Class : CLASS ID BlockBody END
+        '''
+        p[0] = ast.BlockDecl(p[1], p[2], p[3])
+
+
+    def p_ClassList(self, p):
+        '''
+        ClassList :  Class
+        | ClassList Class
         | empty
-    '''
+        '''
 
-def p_PointSeparatedID(t):
-    '''
-        PointSeparatedID : POINT ID
+    def p_Block(self, p):
+        '''
+        Block : BLOCK ID BlockBody END
+        '''
+        p[0] = ast.BlockDecl(p[1], p[2], p[3])
+
+
+    # This is the starting rule due to the start specifier above
+    def p_Model(self, p):
+        '''
+        Model : ClassList Block
         | empty
-    '''
+        '''
+        if len(p) >= 3:
+            p[0] = ast.ModelDecl(p[1], p[2])
+        elif len(p) == 2 :
+            p[0] = ast.ModelDecl([], p[1])
+        else:
+            p[0] = ast.ModelDecl([], None)
+
+    # Error rule for syntax errors
+    def p_error(self, p):
+         if p:
+            print("Syntax error at '%s'" % p.value)
+            print(p.lineno)
+         else:
+            print("Syntax error at EOF")
 
 
-def p_EventIdentifier(t):
-    '''
-    EventIdentifier : ID
-    '''
 
+#------------------------------------------------------------------------------
+if __name__ == "__main__":
+    import time
 
-def p_EventPath(t):
-    '''
-    EventPath : ID PointSeparatedID
-    '''
+    t1 = time.time()
+    parser = Parser()
+    print(time.time() - t1)
 
-def p_AndSeparatedEventPath(t):
-    '''
-        AndSeparatedEventPath : AND EventPath
-        | empty
-    '''
-
-def p_MacroEventDefinition(t):
-    '''
-    MacroEventDefinition : EventIdentifier COLON EventPath AndSeparatedEventPath
-    '''
-
-def p_Synchronization(t):
-    '''
-    Synchronization : MacroEventDefinition
-    '''
-
-
-def p_SynchronizationList(t):
-    '''
-        SynchronizationList : Synchronization SynchronizationList
-        | empty
-    '''
-
-def p_SynchronizationClause(t):
-    '''
-    SynchronizationClause : SYNCHRONIZATION Synchronization SynchronizationList
-    '''
-
-def p_ClassIdentifier(t):
-    '''
-    ClassIdentifier : ID
-    '''
-
-def p_ClassInstance(t):
-    '''
-    ClassInstance : ClassIdentifier ID IDList
-    '''
-
-def p_ComposedBlockClause(t):
-    '''
-    ComposedBlockClause : ClassInstance
-    | Block
-    '''
-
-def p_StateIdentifier(t):
-    '''
-    StateIdentifier : ID
-    '''
-
-def p_Transition(t):
-    '''
-    Transition : EventIdentifier COLON StateIdentifier ARROW StateIdentifier TransitionList
-    '''
-
-def p_TransitionList(t):
-    '''
-        TransitionList : Transition
-        | empty
-    '''
-
-def p_TransitionClause(t):
-    '''
-    TransitionClause : TRANSITION Transition
-    '''
-
-def p_EventClause(t):
-    '''
-    EventClause : EVENT ID IDList
-    '''
-
-def p_StateClause(t):
-    '''
-    StateClause : STATE ID IDList
-    '''
-
-
-def p_InternalBlockBody(t):
-    '''
-    InternalBlockBody : ComposedBlockClause EventClause SynchronizationClause
-    '''
-
-def p_BasicBlockBody(t):
-    '''
-    BasicBlockBody : StateClause EventClause TransitionClause
-    '''
-
-
-def p_BlockBody(t):
-    '''
-    BlockBody : BasicBlockBody
-        | InternalBlockBody
-    '''
-
-
-def p_Class(t):
-    '''
-    Class : CLASS ID BlockBody END
-    '''
-
-
-def p_ClassList(t):
-    '''
-    ClassList : Class ClassList
-    | empty
-    '''
-    print(t[1])
-
-def p_Block(t):
-    '''
-    Block : BLOCK ID BlockBody END
-    '''
-    print(t[2])
-
-# This is the starting rule due to the start specifier above
-def p_Model(t):
-    '''
-    Model : ClassList Block
-    | empty
-    '''
-    print(t[1])
-
-# Error rule for syntax errors
-def p_error(p):
-    print ("Syntax error at token", p.type)
-    print ("Syntax error at line", p.lineno)
-    # Just discard the token and tell the parser it's okay.
-    yacc.token()
-
-yacc.yacc(start = 'Model')
-
-f = open("elevator", "r")
-data = f.read()
-f.close()
-yacc.parse(data,tracking=True)
+    f = open("elevator", "r")
+    data = f.read()
+    f.close()
+    t = parser.parse(text = data)
+    t.show()
 
 
