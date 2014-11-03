@@ -1,3 +1,11 @@
+class Door
+    state open, close
+    event opening, closing
+    transition
+        opening: close -> open
+        closing: open -> close
+end
+
 block DoubleDoor
     Door A, B
     event Aop, Bop, closing

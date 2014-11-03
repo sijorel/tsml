@@ -13,7 +13,7 @@ class Node(object):
         if nodenames and _my_node_name is not None:
             buf.write(lead + self.__class__.__name__+ ' <' + _my_node_name + '>: ')
         else:
-            buf.write(lead + self.__class__.__name__+ ': ')
+            buf.write('\n' +lead + self.__class__.__name__+ ': ')
 
         if self.attr_names:
             if attrnames:
@@ -43,10 +43,9 @@ class ModelDecl(Node):
 
     def children(self):
         nodelist = []
+        if self.block is not None : nodelist.append(("classlist", self.classlist))
         if self.block is not None : nodelist.append(("block", self.block))
 
-        for i, child in enumerate(self.classlist or []):
-            nodelist.append(("classlist[%d]" % i, child))
         return tuple(nodelist)
 
     attr_names=()
@@ -83,19 +82,17 @@ class BasicBlockBody(Node):
     attr_names = ()
 
 
-class InternalBlockBody(Node):
-    def __init__(self, composedblockclause, eventclause, synchronizationclause, observerclause):
-        self.composedblockclause = composedblockclause
+class BlockBody(Node):
+    def __init__(self, firstclause, eventclause, thirdclause):
+        self.firstclause = firstclause
         self.eventclause = eventclause
-        self.synchronizationclause = synchronizationclause
-        self.observerclause = observerclause
+        self.thirdclause = thirdclause
 
     def children(self):
         nodelist = []
-        if self.composedblockclause is not None: nodelist.append(("composedblockclause", self.composedblockclause))
+        if self.firstclause is not None: nodelist.append(("firstclause", self.firstclause))
         if self.eventclause is not None: nodelist.append(("eventclause", self.eventclause))
-        if self.synchronizationclause is not None: nodelist.append(("synchronizationclause", self.synchronizationclause))
-        if self.observerclause is not None: nodelist.append(("observerclause", self.observerclause))
+        if self.thirdclause is not None: nodelist.append(("thirdclause", self.thirdclause))
         return tuple(nodelist)
 
     attr_names = ()
@@ -152,8 +149,7 @@ class Synchronization(Node):
     def children(self):
         nodelist = []
         if self.event is not None: nodelist.append(("event", self.event))
-        for i, child in enumerate(self.eventPathList or []):
-            nodelist.append(("eventPathList[%d]" % i, child))
+        if self.event is not None: nodelist.append(("synchro", self.eventPathList))
 
         return tuple(nodelist)
 

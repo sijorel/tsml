@@ -51,9 +51,10 @@ class Parser:
             | PointSeparatedID POINT ID
         '''
         if len(p) == 2: # single parameter
-            p[0] = ast.ParamList([p[1]])
+            elt = ast.ID(p[1])
+            p[0] = ast.ParamList([elt])
         else:
-            p[1].params.append(p[3])
+            p[1].params.append(ast.ID(p[3]))
             p[0] = p[1]
 
 
@@ -98,7 +99,8 @@ class Parser:
         '''
         SynchronizationClause : SYNCHRONIZATION SynchronizationList
         '''
-        p[0] = ast.ObjectDecl(p[1],p[2])
+        synchro = ast.ID(p[1])
+        p[0] = ast.ObjectDecl(synchro,p[2])
 
 
     def p_ClassInstance(self, p):
@@ -139,7 +141,6 @@ class Parser:
         '''
         TransitionClause : TRANSITION TransitionList
         '''
-        print("Je suis dans transition clause")
         transition = ast.ID(p[1])
         p[0] = ast.ObjectDecl(transition,p[2])
 
@@ -148,7 +149,6 @@ class Parser:
         '''
         EventClause : EVENT IDList
         '''
-        print("Je suis dans event clause")
         event = ast.ID(p[1])
         p[0] = ast.ObjectDecl(event,p[2])
 
@@ -156,25 +156,24 @@ class Parser:
         '''
         StateClause : STATE  IDList
         '''
-        print("Je suis dans state clause")
         state = ast.ID(p[1])
         p[0] = ast.ObjectDecl(state,p[2])
 
 
     def p_BlockBody(self, p):
         '''
-        BlockBody : StateClause EventClause TransitionClause
-            | ComposedBlockClause  SynchronizationClause
+        BlockBody : StateClause  EventClause TransitionClause
+            | ComposedBlockClause  EventClause SynchronizationClause
         '''
-
-        p[0] = ast.BasicBlockBody(p[1], p[2], p[3])
+        p[0] = ast.BlockBody(p[1], p[2], p[3])
 
     def p_Class(self, p):
         '''
         Class : CLASS ID BlockBody END
         '''
-        classID = ast.ID(p[21])
-        p[0] = ast.BlockDecl(p[1], classID, p[3])
+        classID = ast.ID(p[2])
+        type = ast.ID(p[1])
+        p[0] = ast.BlockDecl(type, classID, p[3])
 
 
     def p_ClassList(self, p):
@@ -182,6 +181,11 @@ class Parser:
         ClassList :  Class
         | ClassList Class
         '''
+        if len(p) == 2: # single transition
+            p[0] = ast.ParamList([p[1]])
+        else:
+            p[1].params.append(p[2])
+            p[0] = p[1]
 
     def p_Block(self, p):
         '''
@@ -196,14 +200,12 @@ class Parser:
     def p_Model(self, p):
         '''
         Model : ClassList Block
-        | empty Block
+        | empty
         '''
-        if len(p) >= 3:
-            p[0] = ast.ModelDecl(p[1], p[2])
-        elif len(p) == 2 :
-            p[0] = ast.ModelDecl([], p[1])
-        else:
-            p[0] = ast.ModelDecl([], None)
+        print("Je suis ici")
+        p[0] = ast.ModelDecl(p[1], p[2])
+
+
 
     # Error rule for syntax errors
     def p_error(self, p):
