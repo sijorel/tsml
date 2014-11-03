@@ -39,11 +39,11 @@ class Parser:
             | IDList COMMA ID
         '''
         if len(p) == 2: # single parameter
-            p[0] = ast.ParamList([p[1]])
-        else:
-            p[1].params.append(p[3])
             elt = ast.ID(p[1])
-            p[0] = elt
+            p[0] = ast.ParamList([elt])
+        else:
+            p[1].params.append(ast.ID(p[3]))
+            p[0] = p[1]
 
     def p_PointSeparatedID(self, p):
         '''
@@ -140,7 +140,8 @@ class Parser:
         TransitionClause : TRANSITION TransitionList
         '''
         print("Je suis dans transition clause")
-        p[0] = ast.ObjectDecl(p[1],p[2])
+        transition = ast.ID(p[1])
+        p[0] = ast.ObjectDecl(transition,p[2])
 
 
     def p_EventClause(self, p):
@@ -149,8 +150,7 @@ class Parser:
         '''
         print("Je suis dans event clause")
         event = ast.ID(p[1])
-        eventlist = ast.ParamList(p[2])
-        p[0] = ast.ObjectDecl(p[1],p[2])
+        p[0] = ast.ObjectDecl(event,p[2])
 
     def p_StateClause(self, p):
         '''
@@ -158,8 +158,7 @@ class Parser:
         '''
         print("Je suis dans state clause")
         state = ast.ID(p[1])
-        statelist = ast.ParamList(p[2])
-        p[0] = ast.ObjectDecl(p[1],p[2])
+        p[0] = ast.ObjectDecl(state,p[2])
 
 
     def p_BlockBody(self, p):

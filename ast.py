@@ -100,18 +100,6 @@ class InternalBlockBody(Node):
 
     attr_names = ()
 
-class ObjectDecl(Node):
-    def __init__(self, type, values):
-        self.type = type
-        self.values = values
-
-    def children(self):
-        nodelist = []
-        if self.values is not None : nodelist.append(("values", self.values))
-        return tuple(nodelist)
-
-    attr_names = ()
-
 
 class ComposedBlockClause(Node):
     def __init__(self,Block, ClassInstance):
@@ -206,3 +194,16 @@ class ID(Node):
         return tuple(nodelist)
 
     attr_names = ('name',)
+
+class ObjectDecl(Node):
+    def __init__(self, type, values):
+        self.type = type
+        self.values = values
+
+    def children(self):
+        nodelist = []
+        if self.type is not None : nodelist.append(("type", self.type))
+        if self.values is not None : nodelist.append(("values", self.values))
+        return tuple(nodelist)
+
+    attr_names = ()
