@@ -42,7 +42,8 @@ class Parser:
             p[0] = ast.ParamList([p[1]])
         else:
             p[1].params.append(p[3])
-            p[0] = p[1]
+            elt = ast.ID(p[1])
+            p[0] = elt
 
     def p_PointSeparatedID(self, p):
         '''
@@ -60,7 +61,8 @@ class Parser:
         '''
         EventPath : ID POINT PointSeparatedID
         '''
-        p[0] = ast.EventPath(p[1], p[3])
+        eventID = ast.ID(p[1])
+        p[0] = ast.EventPath(eventID, p[3])
 
     def p_EventPathList(self,p):
         '''
@@ -78,7 +80,8 @@ class Parser:
         '''
         Synchronization : ID COLON EventPathList
         '''
-        p[0] = ast.Synchronization(p[1], p[3])
+        eventID = ast.ID(p[1])
+        p[0] = ast.Synchronization(eventID, p[3])
 
     def p_SynchronizationList(self,p):
         '''
@@ -102,7 +105,8 @@ class Parser:
         '''
         ClassInstance : ID  IDList
         '''
-        p[0] =  ast.ClassInstance(p[1], p[2])
+        classID = ast.ID(p[1])
+        p[0] =  ast.ClassInstance(classID, p[2])
 
 
     def p_ComposedBlockClause(self, t):
@@ -115,7 +119,10 @@ class Parser:
         '''
         Transition : ID COLON ID ARROW ID
         '''
-        p[0] = ast.Transition(p[1], p[3], p[5])
+        eventID = ast.ID(p[1])
+        state1 = ast.ID(p[3])
+        state2 = ast.ID(p[5])
+        p[0] = ast.Transition(eventID, state1, state2)
 
     def p_TransitionList(self, p):
         '''
@@ -132,6 +139,7 @@ class Parser:
         '''
         TransitionClause : TRANSITION TransitionList
         '''
+        print("Je suis dans transition clause")
         p[0] = ast.ObjectDecl(p[1],p[2])
 
 
@@ -139,60 +147,57 @@ class Parser:
         '''
         EventClause : EVENT IDList
         '''
+        print("Je suis dans event clause")
+        event = ast.ID(p[1])
+        eventlist = ast.ParamList(p[2])
         p[0] = ast.ObjectDecl(p[1],p[2])
 
     def p_StateClause(self, p):
         '''
         StateClause : STATE  IDList
         '''
+        print("Je suis dans state clause")
+        state = ast.ID(p[1])
+        statelist = ast.ParamList(p[2])
         p[0] = ast.ObjectDecl(p[1],p[2])
-
-    def p_InternalBlockBody(self, p):
-        '''
-        InternalBlockBody : ComposedBlockClause EventClause SynchronizationClause
-        '''
-        p[0] = ast.InternalBlockBody(p[1], p[2], p[3], None)
-
-    def p_BasicBlockBody(self, p):
-        '''
-        BasicBlockBody : StateClause EventClause TransitionClause
-        '''
-        p[0] = ast.BasicBlockBody(p[1], p[2], p[3], None)
 
 
     def p_BlockBody(self, p):
         '''
-        BlockBody : BasicBlockBody
-            | InternalBlockBody
+        BlockBody : StateClause EventClause TransitionClause
+            | ComposedBlockClause  SynchronizationClause
         '''
-        p[0] = ast.BlockBody(p[1])
+
+        p[0] = ast.BasicBlockBody(p[1], p[2], p[3])
 
     def p_Class(self, p):
         '''
         Class : CLASS ID BlockBody END
         '''
-        p[0] = ast.BlockDecl(p[1], p[2], p[3])
+        classID = ast.ID(p[21])
+        p[0] = ast.BlockDecl(p[1], classID, p[3])
 
 
     def p_ClassList(self, p):
         '''
         ClassList :  Class
         | ClassList Class
-        | empty
         '''
 
     def p_Block(self, p):
         '''
         Block : BLOCK ID BlockBody END
         '''
-        p[0] = ast.BlockDecl(p[1], p[2], p[3])
+        blockID = ast.ID(p[2])
+        type = ast.ID(p[1])
+        p[0] = ast.BlockDecl(type, blockID, p[3])
 
 
     # This is the starting rule due to the start specifier above
     def p_Model(self, p):
         '''
         Model : ClassList Block
-        | empty
+        | empty Block
         '''
         if len(p) >= 3:
             p[0] = ast.ModelDecl(p[1], p[2])

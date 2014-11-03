@@ -25,6 +25,7 @@ class Node(object):
             buf.write(attrstr)
 
         for (child_name, child) in self.children():
+
             child.show(
                 buf,
                 offset=offset + 2,
@@ -58,34 +59,25 @@ class BlockDecl(Node):
 
     def children(self):
         nodelist = []
-        if self.name is not None: nodelist.append(("name", self.name))
         if self.type is not None: nodelist.append(("type", self.type))
+        if self.name is not None: nodelist.append(("name", self.name))
         if self.body is not None: nodelist.append(("blockbody", self.body))
         return tuple(nodelist)
 
     attr_names = ()
 
-class BlockBody(Node):
-    def __init__(self, body):
-        self.body = body
-
-    def children(self):
-        nodelist = []
-        if self.body is not None: nodelist.append(("body", self.body))
 
 class BasicBlockBody(Node):
-    def __init__(self, stateclause, eventclause, transitionclause, observerclause):
+    def __init__(self, stateclause, eventclause, transitionclause):
         self.stateclause = stateclause
         self.eventclause = eventclause
         self.transitionclause = transitionclause
-        self.observerclause = observerclause
 
     def children(self):
         nodelist = []
         if self.stateclause is not None: nodelist.append(("stateclause", self.stateclause))
         if self.eventclause is not None: nodelist.append(("eventclause", self.eventclause))
         if self.transitionclause is not None: nodelist.append(("transitionclause", self.transitionclause))
-        if self.observerclause is not None: nodelist.append(("observerclause", self.observerclause))
         return tuple(nodelist)
 
     attr_names = ()
@@ -115,8 +107,7 @@ class ObjectDecl(Node):
 
     def children(self):
         nodelist = []
-        for i, child in enumerate(self.values or []):
-            nodelist.append(("values[%d]" % i, child))
+        if self.values is not None : nodelist.append(("values", self.values))
         return tuple(nodelist)
 
     attr_names = ()
@@ -205,3 +196,13 @@ class ParamList(Node):
         return tuple(nodelist)
 
     attr_names = ()
+
+class ID(Node):
+    def __init__(self, name):
+        self.name = name
+
+    def children(self):
+        nodelist = []
+        return tuple(nodelist)
+
+    attr_names = ('name',)
