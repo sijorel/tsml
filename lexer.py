@@ -25,7 +25,7 @@ class Lexer(object):
 
 
      def build(self, **kwargs):
-        """ Builds the lexer from the specification. Must be
+        """ Builds the lexer from the documentation. Must be
             called after the lexer object is created.
 
             This method exists separately, because the PLY
@@ -79,7 +79,7 @@ class Lexer(object):
               'COLON',
               'POINT',
               'COMMA',
-              'AND'] + list(keywords.values())
+              'AMP'] + list(keywords.values())
 
 
      #Tokens
@@ -87,7 +87,7 @@ class Lexer(object):
      t_COLON = r':'
      t_POINT = r'\.'
      t_COMMA = r','
-     t_AND = r'&'
+     t_AMP = r'&'
 
 
     ##

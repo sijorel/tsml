@@ -68,7 +68,7 @@ class Parser:
     def p_EventPathList(self,p):
         '''
             EventPathList : EventPath
-            | EventPathList AND EventPath
+            | EventPathList AMP EventPath
         '''
         if len(p) == 2: # single synchronization
             p[0] = ast.ParamList([p[1]])
@@ -111,11 +111,23 @@ class Parser:
         p[0] =  ast.ClassInstance(classID, p[2])
 
 
-    def p_ComposedBlockClause(self, t):
+    def p_ClassInstanceList(self, p):
         '''
-        ComposedBlockClause : ClassInstance
+        ClassInstanceList : ClassInstance
+          | ClassInstanceList ClassInstance
+        '''
+        if len(p) == 2: # single class instance
+            p[0] = ast.ParamList([p[1]])
+        else:
+            p[1].params.append(p[2])
+            p[0] = p[1]
+
+    def p_ComposedBlockClause(self, p):
+        '''
+        ComposedBlockClause : ClassInstanceList
         | Block
         '''
+        p[0] = ast.ComposedBlockClause(p[1])
 
     def p_Transition(self, p):
         '''
@@ -202,7 +214,6 @@ class Parser:
         Model : ClassList Block
         | empty
         '''
-        print("Je suis ici")
         p[0] = ast.ModelDecl(p[1], p[2])
 
 
@@ -216,19 +227,24 @@ class Parser:
             print("Syntax error at EOF")
 
 
-
-#------------------------------------------------------------------------------
 if __name__ == "__main__":
     import time
+    import ast2pAutomata
 
     t1 = time.time()
     parser = Parser()
     print(time.time() - t1)
 
-    f = open("elevator", "r")
+    f = open("input/elevator", "r")
     data = f.read()
     f.close()
     t = parser.parse(text = data)
-    t.show()
+    #t.show()
+
+    mv = ast2pAutomata.Ast2pa()
+    modele = mv.transformModel(t)
+    for k,v in modele.items():
+       v.show()
+       print("\n")
 
 

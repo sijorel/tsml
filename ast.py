@@ -79,29 +79,24 @@ class BlockBody(Node):
 
 
 class ComposedBlockClause(Node):
-    def __init__(self,Block, ClassInstance):
-        self.Block = Block
-        self.ClassInstance = ClassInstance
+    def __init__(self,classorblock):
+        self.classorblock = classorblock #Can be classInstanceList or blockList
 
     def children(self):
         nodelist = []
-        if self.Block is not None : nodelist.append(("block", self.Block))
-        for i, child in enumerate(self.ClassInstance or []):
-            nodelist.append(("classInstance[%d]" % i, child))
+        if self.classorblock is not None : nodelist.append(("classorblock", self.classorblock))
         return tuple(nodelist)
-
     attr_names=()
 
 class ClassInstance(Node):
-    def __init__(self, classname, identifier):
-        self.identifier = identifier
+    def __init__(self, classname, identifierList):
+        self.identifierList = identifierList
         self.classname = classname
 
     def children(self):
         nodelist = []
         if self.classname is not None : nodelist.append(("classname", self.classname))
-        for i, child in enumerate(self.identifier or []):
-            nodelist.append(("identifier[%d]" % i, child))
+        if self.identifierList is not None : nodelist.append(("identifierList", self.identifierList))
         return tuple(nodelist)
 
     attr_names = ()
