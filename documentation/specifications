@@ -1,0 +1,40 @@
+I- Livrables avant le 19 Decembre 2014
+
+- Un modeler system: TSML.
+
+- Un article scientifique sur le modeler et cas test ( de 4 à 10 pages).
+
+- Un mode d'emploi du modeler.
+
+II- Specifications du TSML
+
+- Lecture d'un modèle: fichier source contenant le modèle
+- Vérification des propriétés du modèle
+- Ecriture du modèle
+
+III -  Plan de l'article scientifique
+- Title, authors, abstract, keywords
+- Introduction
+- Motivation example (The test case)
+- Development (What you have done, this can take two sections)
+- Experiments ( On the test case)
+- Conclusion
+- References
+- Appendices
+
+IV - Modeler TSML
+
+    IV-1) Input
+        - Text file containing the model (.tsml file)
+        - Fichier de commande contenant les propriétes à vérifier
+
+    IV-2) Output
+        - Validation des ropriétés spécifiées dans le fichier de commande
+        - Flat model (Synchronized product) in a .tsml file
+
+Listes des propriétées
+- Sureté:
+    - Pas de portes ouvertes entre deux étages (écrire un observateur pour le caractériser)
+- Vivacité:
+
+

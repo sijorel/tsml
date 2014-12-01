@@ -1,5 +1,13 @@
+class OnOff
+    state off, on
+    event up, down
+    transition
+        up: off -> on
+        down: on -> off
+end
+
 class Door
-    state open, close
+    state close, open
     event opening, closing
     transition
         opening: close -> open
@@ -8,6 +16,7 @@ end
 
 block DoubleDoor
     Door A, B
+    OnOff C
     event Aop, Bop, closing
     synchronization
         Aop: A.opening
