@@ -1,5 +1,6 @@
 __author__ = 'deschancesdjomo'
 import sys
+
 class Node(object):
     """ Abstract base class for AST nodes.
     """
@@ -8,31 +9,25 @@ class Node(object):
         """
         pass
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, nodenames=False, _my_node_name=None):
+
+    def show(self, buf=sys.stdout, offset=0, _my_node_name=None):
         lead = ' ' * offset
-        if nodenames and _my_node_name is not None:
-            buf.write(lead + self.__class__.__name__+ ' <' + _my_node_name + '>: ')
+        if _my_node_name is not None:
+            buf.write('\n' + lead + ' <' + _my_node_name + '>: ')
         else:
-            buf.write('\n' +lead + self.__class__.__name__+ ': ')
+            buf.write('{ ' +lead + self.__class__.__name__+ ': [')
 
         if self.attr_names:
-            if attrnames:
-                nvlist = [(n, getattr(self,n)) for n in self.attr_names]
-                attrstr = ', '.join('%s=%s' % nv for nv in nvlist)
-            else:
-                vlist = [getattr(self, n) for n in self.attr_names]
-                attrstr = ', '.join('%s' % v for v in vlist)
+            vlist = [getattr(self, n) for n in self.attr_names]
+            attrstr = ', '.join('%s' % v for v in vlist)
             buf.write(attrstr)
 
-        for (child_name, child) in self.children():
 
+        for (child_name, child) in self.children():
             child.show(
                 buf,
                 offset=offset + 2,
-                attrnames=attrnames,
-                nodenames=nodenames,
                 _my_node_name=child_name)
-
 
 
 class ModelDecl(Node):
@@ -58,28 +53,13 @@ class BlockDecl(Node):
 
     def children(self):
         nodelist = []
-        if self.type is not None: nodelist.append(("type", self.type))
-        if self.name is not None: nodelist.append(("name", self.name))
+        if self.type is not None: nodelist.append(("blocktype", self.type))
+        if self.name is not None: nodelist.append(("blockname", self.name))
         if self.body is not None: nodelist.append(("blockbody", self.body))
         return tuple(nodelist)
 
     attr_names = ()
 
-
-class BasicBlockBody(Node):
-    def __init__(self, stateclause, eventclause, transitionclause):
-        self.stateclause = stateclause
-        self.eventclause = eventclause
-        self.transitionclause = transitionclause
-
-    def children(self):
-        nodelist = []
-        if self.stateclause is not None: nodelist.append(("stateclause", self.stateclause))
-        if self.eventclause is not None: nodelist.append(("eventclause", self.eventclause))
-        if self.transitionclause is not None: nodelist.append(("transitionclause", self.transitionclause))
-        return tuple(nodelist)
-
-    attr_names = ()
 
 
 class BlockBody(Node):
@@ -105,9 +85,9 @@ class ComposedBlockClause(Node):
 
     def children(self):
         nodelist = []
-        if self.Block is not None : nodelist.append(("Block", self.Block))
+        if self.Block is not None : nodelist.append(("block", self.Block))
         for i, child in enumerate(self.ClassInstance or []):
-            nodelist.append(("ClassInstance[%d]" % i, child))
+            nodelist.append(("classInstance[%d]" % i, child))
         return tuple(nodelist)
 
     attr_names=()
@@ -150,20 +130,19 @@ class Synchronization(Node):
         nodelist = []
         if self.event is not None: nodelist.append(("event", self.event))
         if self.event is not None: nodelist.append(("synchro", self.eventPathList))
-
         return tuple(nodelist)
 
     attr_names = ()
 
 class EventPath(Node):
-    def __init__(self, identifier1, identifier2):
-        self.identifier1 = identifier1
-        self.identifier2 = identifier2
+    def __init__(self, id, values):
+        self.id = id
+        self.values = values
 
     def children(self):
         nodelist = []
-        if self.identifier1 is not None: nodelist.append(("identifier1", self.identifier1))
-        if self.identifier2 is not None: nodelist.append(("identifier2", self.identifier2))
+        if self.id is not None: nodelist.append(("id", self.id))
+        if self.values is not None: nodelist.append(("values", self.values))
         return tuple(nodelist)
 
     attr_names = ()
@@ -198,8 +177,8 @@ class ObjectDecl(Node):
 
     def children(self):
         nodelist = []
-        if self.type is not None : nodelist.append(("type", self.type))
-        if self.values is not None : nodelist.append(("values", self.values))
+        if self.type is not None : nodelist.append(("objecttype", self.type))
+        if self.values is not None : nodelist.append(("objectvalues", self.values))
         return tuple(nodelist)
 
     attr_names = ()
